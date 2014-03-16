@@ -1,0 +1,107 @@
+<?php
+/**
+ * @file: User related actions/hooks file.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function qrbportal_user_menu() {
+  $items['user/add/profile'] = array(
+    'title' => 'Profile page',
+    'page callback' => 'qrbportal_add_profile_form',
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['user/edit/profile'] = array(
+    'title' => 'Profile page',
+    'page callback' => 'qrbportal_update_profile_form',
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['user/edit/profile/%name'] = array(
+    'title' => 'Profile page',
+    'page callback' => 'qrbportal_update_profile_form',
+    'access arguments' => array('access content'),
+  );
+  $items['user/profile'] = array(
+    'title' => 'Profile page',
+    'page callback' => 'qrbportal_user_profile_form',
+    'access arguments' => array('access content'),
+  );
+  $items['user/profile/%name'] = array(
+    'title' => 'Profile page',
+    'page callback' => 'qrbportal_user_profile_form',
+    'access arguments' => array('access content'),
+  );
+  return $items;
+}
+
+/**
+ * Page callback for profile creation form.
+ */
+function qrbportal_add_profile_form() {
+  global $user;
+  $node = (object) array('uid' => $user->uid, 'name' => (isset($user->name) ? $user->name : ''), 'type' => 'job_seeker', 'language' => LANGUAGE_NONE);
+  $form_state['build_info']['args'] = array($node);
+  form_load_include($form_state, 'inc', 'node', 'node.pages');
+  $form = drupal_build_form('job_seeker_node_form', $form_state);
+  $form['additional_settings']['#access'] = FALSE;
+  return $form;
+}
+
+/**
+ * Page callback for profile update form.
+ */
+function qrbportal_update_profile_form($seeker = NULL) {
+  global $user;
+  if ($seeker == NULL) {
+    $seeker = $user;
+  }
+  else {
+    $seeker = user_load_by_name($seeker);
+  }
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'job_seeker')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_profile_owner', 'target_id', $seeker->uid);
+  $result = $query->execute();
+  $node = current($result['node']);
+  module_load_include('inc', 'node', 'node.pages');
+  $node = node_load($node->nid);
+  $form = node_page_edit($node);
+
+  $form['additional_settings']['#access'] = FALSE;
+  return $form;
+}
+
+/**
+ * Page callback for profile view form.
+ */
+function qrbportal_user_profile_form($seeker = NULL) {
+  global $user;
+  if ($seeker != NULL) {
+    $seeker = user_load_by_name($seeker);
+  }
+  else {
+    $seeker = $user;
+  }
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'job_seeker')
+    ->propertyCondition('status', 1)
+    ->fieldCondition('field_profile_owner', 'target_id', $seeker->uid);
+  $result = $query->execute();
+  $node = current($result['node']);
+  $node = node_load($node->nid);
+  return node_view($node, 'full');
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function qrbportal_user_form_alter(&$form, &$form_state, $form_id) {
+  if ('user_register_form' == $form_id) {
+  }
+}

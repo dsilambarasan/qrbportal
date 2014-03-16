@@ -1,0 +1,4 @@
+name = QRB Portal User Actions
+description = User Actions/hooks.
+package = QRB Portal
+core = 7.x
